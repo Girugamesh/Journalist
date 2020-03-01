@@ -1,18 +1,17 @@
+using AutoFixture;
+using AutoFixture.AutoMoq;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.IntegrationTests.Infrastructure.Customizations.Customizations;
-using Ploeh.AutoFixture;
-using Ploeh.AutoFixture.AutoMoq;
-using Ploeh.AutoFixture.Xunit2;
 
 namespace Journalist.EventStore.IntegrationTests.Infrastructure.TestData
 {
     public class AutoMoqDataAttribute : AutoDataAttribute
     {
         public AutoMoqDataAttribute()
-            : base(new Fixture()
-                .Customize(new AutoConfiguredMoqCustomization())
+            : base(() => new Fixture()
+                .Customize(new AutoMoqCustomization { ConfigureMembers = true })
                 .Customize(new JournaledEventCustomization()))
         {
-
         }
     }
 }

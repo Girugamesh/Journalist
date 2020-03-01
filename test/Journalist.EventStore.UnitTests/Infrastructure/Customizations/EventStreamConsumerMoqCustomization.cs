@@ -1,8 +1,8 @@
+using AutoFixture;
+using AutoFixture.AutoMoq;
 using Journalist.EventStore.Streams;
 using Journalist.Tasks;
 using Moq;
-using Ploeh.AutoFixture;
-using Ploeh.AutoFixture.AutoMoq;
 
 namespace Journalist.EventStore.UnitTests.Infrastructure.Customizations
 {

@@ -10,7 +10,7 @@ namespace Journalist.EventStore.Notifications.Listeners
 {
     public abstract class StreamConsumingNotificationListener : INotificationListener
     {
-        private readonly static object s_lock = new object();
+        private static readonly object s_lock = new object();
         private readonly CountdownEvent m_processingCountdown = new CountdownEvent(0);
         private ILogger m_logger;
 
@@ -45,9 +45,7 @@ namespace Journalist.EventStore.Notifications.Listeners
             var retryProcessing = false;
             try
             {
-                var consumer = await m_subscription.CreateSubscriptionConsumerAsync(
-                    streamName: notification.StreamName,
-                    readFromEnd: notification.FromVersion != StreamVersion.Unknown);
+                var consumer = await m_subscription.CreateSubscriptionConsumerAsync(notification.StreamName);
 
                 retryProcessing = await ReceiveAndProcessEventsAsync(notification, consumer);
                 await consumer.CloseAsync();
@@ -74,27 +72,35 @@ namespace Journalist.EventStore.Notifications.Listeners
             }
         }
 
-        protected abstract Task<bool> TryProcessEventFromConsumerAsync(IEventStreamConsumer consumer);
+        protected abstract Task<EventProcessingResult> TryProcessEventFromConsumerAsync(
+			IEventStreamConsumer consumer,
+			StreamVersion notificationStreamVersion);
 
         private async Task<bool> ReceiveAndProcessEventsAsync(EventStreamUpdated notification, IEventStreamConsumer consumer)
         {
             var retryProcessing = true;
+	        var commitProcessing = false;
             var receivingResult = await consumer.ReceiveEventsAsync();
 
-            if (receivingResult == ReceivingResultCode.EventsReceived && await TryProcessEventFromConsumerAsync(consumer))
+            if (receivingResult == ReceivingResultCode.EventsReceived)
             {
-                await consumer.CommitProcessedStreamVersionAsync();
-                retryProcessing = false;
+	            var processingResult = await TryProcessEventFromConsumerAsync(consumer, notification.ToVersion);
+	            retryProcessing = !processingResult.IsSuccessful;
+	            commitProcessing = processingResult.ShouldCommitProcessing;
             }
             else if (receivingResult == ReceivingResultCode.EmptyStream)
             {
                 retryProcessing = false;
             }
 
+			if (commitProcessing)
+			{
+				await consumer.CommitProcessedStreamVersionAsync();
+			}
             if (retryProcessing)
             {
                 ListenerLogger.Warning(
-                    "Processing notification ({NotificationId}, {NotificationType}) was unsuccessful (Code). Going to try later.",
+                    "Processing notification ({NotificationId}, {NotificationType}) was unsuccessful {Code}. Going to try later.",
                     notification.NotificationId,
                     notification.NotificationType,
                     receivingResult);

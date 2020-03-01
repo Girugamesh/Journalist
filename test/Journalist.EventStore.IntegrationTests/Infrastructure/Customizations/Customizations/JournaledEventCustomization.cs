@@ -1,6 +1,6 @@
 using System;
+using AutoFixture;
 using Journalist.EventStore.Events;
-using Ploeh.AutoFixture;
 
 namespace Journalist.EventStore.IntegrationTests.Infrastructure.Customizations.Customizations
 {
@@ -13,7 +13,7 @@ namespace Journalist.EventStore.IntegrationTests.Infrastructure.Customizations.C
                 {
                     var result = JournaledEvent.Create(
                         new object(),
-                        (_, type, writer) => writer.WriteLine(fixture.Create("EventPayload")));
+                        (_, type, writer) => writer.WriteLine("EventPayload"));
 
                     result.SetHeader(headerName.ToString("N"), headerValue);
 

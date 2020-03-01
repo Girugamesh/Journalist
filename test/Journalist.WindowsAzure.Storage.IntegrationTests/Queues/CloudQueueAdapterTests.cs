@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.Collections;
 using Journalist.WindowsAzure.Storage.Queues;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.WindowsAzure.Storage.IntegrationTests.Queues
@@ -66,8 +66,7 @@ namespace Journalist.WindowsAzure.Storage.IntegrationTests.Queues
             Assert.Equal(updatedContent, updatedMessage.Content);
         }
 
-        [Theory]
-        [InlineAutoData]
+        [Fact]
         public async Task UpdateMessage_UpdatesVisibility()
         {
             // arrange
@@ -86,6 +85,7 @@ namespace Journalist.WindowsAzure.Storage.IntegrationTests.Queues
             Assert.Null(updatedMessage);
         }
 
+        [Theory]
         [InlineAutoData]
         public async Task UpdateMessage_UpdatesContentAndVisibility(byte[] originalContent, byte[] updatedContent)
         {
@@ -126,8 +126,8 @@ namespace Journalist.WindowsAzure.Storage.IntegrationTests.Queues
             Assert.Null(receivedMessages);
         }
 
-        public StorageFactory Factory { get; set; }
+        public StorageFactory Factory { get; }
 
-        public ICloudQueue Queue { get; set; }
+        public ICloudQueue Queue { get; }
     }
 }

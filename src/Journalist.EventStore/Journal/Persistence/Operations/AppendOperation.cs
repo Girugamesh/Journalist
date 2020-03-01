@@ -27,10 +27,9 @@ namespace Journalist.EventStore.Journal.Persistence.Operations
             IncrementStreamVersion(events);
             UpdateHead();
             AppendEvents(events);
-            InsertPendingNotification();
         }
 
-        public async override Task<EventStreamHeader> ExecuteAsync()
+        public override async Task<EventStreamHeader> ExecuteAsync()
         {
             var batchResult = await ExecuteBatchOperationAsync();
 
@@ -42,8 +41,7 @@ namespace Journalist.EventStore.Journal.Persistence.Operations
             var batchOperationException = exception as BatchOperationException;
             if (batchOperationException != null)
             {
-                if (batchOperationException.OperationBatchNumber == 0 &&
-                    IsConcurrencyException(batchOperationException))
+                if (batchOperationException.OperationBatchNumber == 0 && IsConcurrencyException(batchOperationException))
                 {
                     throw new EventStreamConcurrencyException(
                         "Event stream '{0}' was concurrently updated.".FormatString(StreamName),
@@ -59,18 +57,13 @@ namespace Journalist.EventStore.Journal.Persistence.Operations
 
         private void UpdateHead()
         {
-            var headProperties = new Dictionary<string, object>
-            {
-                { EventJournalTableRowPropertyNames.Version, (int)m_targetVersion }
-            };
-
             if (EventStreamHeader.IsNewStream(m_header))
             {
-                Insert(EventJournalTableKeys.Header, headProperties);
+                Insert(EventJournalTableKeys.Header, EventJournalTableRowPropertyNames.Version, (int)m_targetVersion);
             }
             else
             {
-                Merge(EventJournalTableKeys.Header, m_header.ETag, headProperties);
+                Merge(EventJournalTableKeys.Header, m_header.ETag, EventJournalTableRowPropertyNames.Version, (int)m_targetVersion);
             }
         }
 
@@ -83,18 +76,6 @@ namespace Journalist.EventStore.Journal.Persistence.Operations
 
                 Insert(currentVersion.ToString(), journaledEvent.ToDictionary());
             }
-        }
-
-        private void InsertPendingNotification()
-        {
-            var rowKey = EventJournalTableKeys.PendingNotificationPrefix + m_header.Version;
-
-            var properties = new Dictionary<string, object>
-            {
-                { EventJournalTableRowPropertyNames.Version, (int)m_targetVersion }
-            };
-
-            Insert(rowKey, properties);
         }
 
         private static bool IsConcurrencyException(BatchOperationException exception)

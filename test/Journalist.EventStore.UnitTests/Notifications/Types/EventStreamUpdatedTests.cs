@@ -15,8 +15,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void IsAddressedTo_WhenNotificationWasNotAddressed_Throws(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             Assert.Throws<InvalidOperationException>(() => notification.IsAddressedTo(listener));
         }
@@ -24,8 +23,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void IsAddressedTo_WhenRecipientSpecifiedDirectly_ReturnsTrue(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             Assert.True(notification
                 .SendTo(listener)
@@ -36,9 +34,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         public void AddressedNotification_WhenRecipientIsDifferent_ReturnsFalse(
             ListenerType1 listener1,
             ListenerType2 listener2,
-            EventStreamUpdated notification,
-            EventStreamReaderId originalConsumer,
-            EventStreamReaderId sendedConsumer)
+            EventStreamUpdated notification)
         {
             Assert.False(notification
                 .SendTo(listener1)
@@ -48,8 +44,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void SendTo_PreservesNotificationPropertiesValues(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             var addressedNotification = (EventStreamUpdated)notification.SendTo(listener);
 
@@ -63,8 +58,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void SendTo_WhenMessagHasBeenAddressedToTheSameConsumer_ReturnsItself(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             var addressedNotification = notification.SendTo(listener);
 
@@ -74,8 +68,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void SendTo_WhenMessagHasBeenAddressedToTheSameConsumer_SavesId(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             var addressedNotification = notification.SendTo(listener);
 
@@ -87,8 +80,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void SendTo_ChangesNotificationId(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             var addressedNotification = notification.SendTo(listener);
 
@@ -97,8 +89,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
 
         [Theory, AutoMoqData]
         public void RestoreFrom_IncreasesDeliveryCount(
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             Assert.Equal(0, notification.DeliveryCount);
 
@@ -112,8 +103,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void RedeliverTo_DecreasesDeliveryCount(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             SaveAndRestore(notification);
 
@@ -123,8 +113,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Types
         [Theory, AutoMoqData]
         public void RedeliverTo_WhenNotificationWasNotDelivered_DoesNotTouchDecreasesDeliveryCount(
             INotificationListener listener,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             Assert.Equal(0, notification.RedeliverTo(listener).DeliveryCount);
         }

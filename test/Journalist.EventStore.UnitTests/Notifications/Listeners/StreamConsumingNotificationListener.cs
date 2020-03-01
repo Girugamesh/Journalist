@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.Notifications.Listeners;
 using Journalist.EventStore.Notifications.Types;
 using Journalist.EventStore.Streams;
@@ -7,7 +8,6 @@ using Journalist.EventStore.UnitTests.Infrastructure.Stubs;
 using Journalist.EventStore.UnitTests.Infrastructure.TestData;
 using Journalist.Tasks;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Notifications.Listeners
@@ -25,7 +25,6 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
         [Theory, StreamConsumingNotificationListenerData]
         public void OnSubscriptionStarted_WhenSubscriptionWasStarted_Throws(
             StreamConsumingNotificationListenerStub listener,
-            EventStreamUpdated notification,
             INotificationListenerSubscription subscription)
         {
             Assert.Throws<InvalidOperationException>(() => listener.OnSubscriptionStarted(subscription));
@@ -34,8 +33,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
         [Theory, StreamConsumingNotificationListenerData]
         public async Task nEventStreamUpdated_WhenSubscriptionWasStopped_Throws(
             StreamConsumingNotificationListenerStub listener,
-            EventStreamUpdated notification,
-            INotificationListenerSubscription subscription)
+            EventStreamUpdated notification)
         {
             listener.OnSubscriptionStopped();
 
@@ -51,7 +49,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
             await listener.On(notification);
 
             subscriptionMock.Verify(
-                self => self.CreateSubscriptionConsumerAsync(notification.StreamName, true),
+                self => self.CreateSubscriptionConsumerAsync(notification.StreamName),
                 Times.Once());
         }
 
@@ -91,7 +89,6 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
         [Theory, StreamConsumingNotificationListenerData(processingFailed: true)]
         public async Task OnEventStreamUpdated_WhenListenerProcessingFailed_DefersNotificationProcessing(
             [Frozen] Mock<INotificationListenerSubscription> subscriptionMock,
-            [Frozen] Mock<IEventStreamConsumer> consumerMock,
             StreamConsumingNotificationListenerStub listener,
             EventStreamUpdated notification)
         {

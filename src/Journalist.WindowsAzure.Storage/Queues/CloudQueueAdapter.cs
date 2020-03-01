@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Journalist.WindowsAzure.Storage.Internals;
-using Microsoft.WindowsAzure.Storage.Queue;
+using Microsoft.Azure.Storage.Queue;
 
 namespace Journalist.WindowsAzure.Storage.Queues
 {
@@ -15,17 +15,34 @@ namespace Journalist.WindowsAzure.Storage.Queues
 
         public Task AddMessageAsync(byte[] content)
         {
+#if NET451
             return CloudEntity.AddMessageAsync(new CloudQueueMessage(content));
+#else
+            var message = new CloudQueueMessage(null);
+            message.SetMessageContent2(content);
+            return CloudEntity.AddMessageAsync(message);
+#endif
         }
 
         public Task AddMessageAsync(byte[] content, TimeSpan visibilityTimeout)
         {
+#if NET451
             return CloudEntity.AddMessageAsync(
                 message: new CloudQueueMessage(content),
                 timeToLive: null,
                 initialVisibilityDelay: visibilityTimeout,
                 options: null,
                 operationContext: null);
+#else
+            var message = new CloudQueueMessage(null);
+            message.SetMessageContent2(content);
+            return CloudEntity.AddMessageAsync(
+                message: message,
+                timeToLive: null,
+                initialVisibilityDelay: visibilityTimeout,
+                options: null,
+                operationContext: null);
+#endif
         }
 
         public async Task<ICloudQueueMessage> GetMessageAsync()
@@ -116,7 +133,7 @@ namespace Journalist.WindowsAzure.Storage.Queues
             Require.NotNull(content, "content");
 
             var message = new CloudQueueMessage(messageId, popReceipt);
-            message.SetMessageContent(content);
+            message.SetMessageContent2(content);
 
             return CloudEntity.UpdateMessageAsync(
                 message,
@@ -131,7 +148,7 @@ namespace Journalist.WindowsAzure.Storage.Queues
             Require.NotNull(content, "content");
 
             var message = new CloudQueueMessage(messageId, popReceipt);
-            message.SetMessageContent(content);
+            message.SetMessageContent2(content);
 
             return CloudEntity.UpdateMessageAsync(
                 message,

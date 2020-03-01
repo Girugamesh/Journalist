@@ -70,14 +70,18 @@ namespace Journalist.EventStore.Connection
                     m_configuration.NotificationQueueName + "-" + index.ToString("D3")))
                 .ToArray();
 
-            var consumersRegistry = new EventStreamConsumers(deploymentTable);
+			var eventJournal = new EventJournal(journalTable);
+
+			var consumersRegistry = new EventStreamConsumers(deploymentTable);
+			var consumersService = new ConsumersService(consumersRegistry, eventJournal);
 
             var notificationHub = new NotificationHub(
-                new PollingJob(new PollingTimeout()),
+                new PollingJob("NotificationHubPollingJob", new PollingTimeout()),
                 new NotificationsChannel(queues, new NotificationFormatter()),
                 new ReceivedNotificationProcessor());
 
-            var pendingNotifications = new PendingNotifications(journalTable);
+            var pendingNotificationTable = m_factory.CreateTable(m_configuration.StorageConnectionString, m_configuration.PendingNotificationsTableName);
+            var pendingNotifications = new PendingNotifications(pendingNotificationTable);
             var pendingNotificationsChaserTimeout = new PollingTimeout(
                 TimeSpan.FromMinutes(Constants.Settings.PENDING_NOTIFICATIONS_CHASER_INITIAL_TIMEOUT_IN_MINUTES),
                 Constants.Settings.PENDING_NOTIFICATIONS_CHASER_TIMEOUT_MULTIPLIER,
@@ -87,7 +91,7 @@ namespace Journalist.EventStore.Connection
             var pendingNotificationsChaser = new PendingNotificationsChaser(
                 pendingNotifications,
                 notificationHub,
-                new PollingJob(pendingNotificationsChaserTimeout),
+                new PollingJob("PendingNotificationsChaserPollingJob", pendingNotificationsChaserTimeout),
                 m_factory.CreateBlobContainer(
                     m_configuration.StorageConnectionString,
                     m_configuration.PendingNotificationsChaserExclusiveAccessLockBlobContainerName).CreateBlockBlob(
@@ -127,14 +131,15 @@ namespace Journalist.EventStore.Connection
                 }
             };
 
-            return new EventStoreConnection(
+	        return new EventStoreConnection(
                 connectivityState,
-                new EventJournal(journalTable),
+                eventJournal,
                 notificationHub,
                 pendingNotifications,
                 consumersRegistry,
                 sessionFactory,
-                pipelineFactory);
+                pipelineFactory,
+				consumersService);
         }
     }
 }

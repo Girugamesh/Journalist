@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.Events;
 using Journalist.EventStore.Journal;
 using Journalist.EventStore.Journal.Persistence.Operations;
-using Journalist.EventStore.UnitTests.Infrastructure.TestData;
-using Journalist.Extensions;
 using Journalist.WindowsAzure.Storage.Tables;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
@@ -17,7 +15,7 @@ namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
     public class AppendOperationTests : OperationFixture
     {
         [Theory]
-        [AutoMoqData]
+        [AppendOperationTestsData]
         public void Prepare_CreatesBatchOperation(
             [Frozen] Mock<ICloudTable> tableMock,
             JournaledEvent[] events,
@@ -25,13 +23,12 @@ namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
         {
             operation.Prepare(events);
 
-            tableMock
-                .Verify(self => self.PrepareBatchOperation(), Times.Once());
+            tableMock.Verify(self => self.PrepareBatchOperation(), Times.Once());
         }
 
         [Theory]
-        [AutoMoqData]
-        public void Prepare_UpdatesHeaderRow(
+        [AppendOperationTestsData]
+        public void Prepare_ForInitializedHeader_UpdatesHeaderRow(
             [Frozen] Mock<IBatchOperation> operationMock,
             [Frozen] string streamName,
             [Frozen] EventStreamHeader header,
@@ -46,12 +43,13 @@ namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
                 operationMock, streamName,
                 "HEAD",
                 header.ETag,
-                columns => columns["Version"].Equals(targetVersion));
+                name => name.Equals("Version"),
+                value => value.Equals(targetVersion));
         }
 
         [Theory]
-        [AutoMoqData]
-        public void Prepare_InsertsPendingNotificationRow(
+        [AppendOperationTestsData(true)]
+        public void Prepare_ForUnknownHeader_InsertsHeaderRow(
             [Frozen] Mock<IBatchOperation> operationMock,
             [Frozen] string streamName,
             [Frozen] EventStreamHeader header,
@@ -65,12 +63,13 @@ namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
             VerifyInsertOperation(
                 operationMock,
                 streamName,
-                "PNDNTF|" + header.Version,
-                columns => columns["Version"].Equals(targetVersion));
+                "HEAD",
+                name => name.Equals("Version"),
+                value => value.Equals(targetVersion));
         }
 
         [Theory]
-        [AutoMoqData]
+        [AppendOperationTestsData]
         public void Prepare_InsertsEvents(
             [Frozen] Mock<IBatchOperation> operationMock,
             [Frozen] string streamName,
@@ -87,15 +86,17 @@ namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
                 version = version.Increment();
 
                 VerifyInsertOperation(
-                    operationMock,
-                    streamName,
-                    version.ToString(),
-                    columns => columns["EventId"].Equals(e.EventId));
+                    operationMock: operationMock,
+                    partitionKey: streamName,
+                    rowKey: version.ToString(),
+                    verifyColumns: columns =>
+                        columns["EventId"].Equals(e.EventId) &&
+                        columns["EventType"].Equals(e.EventTypeName));
             }
         }
 
         [Theory]
-        [AutoMoqData]
+        [AppendOperationTestsData]
         public async Task Execute_WhenOperationHasNotBeenPrepared_Throws(
             AppendOperation operation)
         {
@@ -103,7 +104,7 @@ namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
         }
 
         [Theory]
-        [AutoMoqData]
+        [AppendOperationTestsData]
         public async Task Execute_ReturnsHeaderWithNewETag(
             [Frozen] IReadOnlyList<OperationResult> batchResult,
             JournaledEvent[] events,
@@ -117,7 +118,7 @@ namespace Journalist.EventStore.UnitTests.Journal.Persistence.Operations
         }
 
         [Theory]
-        [AutoMoqData]
+        [AppendOperationTestsData]
         public async Task Execute_ReturnsHeaderWithIncrementedVersion(
             [Frozen] StreamVersion currentVersion,
             JournaledEvent[] events,

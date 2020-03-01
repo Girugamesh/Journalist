@@ -5,9 +5,9 @@ using System.Net;
 using System.Threading.Tasks;
 using Journalist.Collections;
 using Journalist.Extensions;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob.Protocol;
 
 namespace Journalist.WindowsAzure.Storage.Blobs
 {
@@ -22,13 +22,13 @@ namespace Journalist.WindowsAzure.Storage.Blobs
             m_blob = blob;
         }
 
-        public async Task<string> AcquireLeaseAsync(TimeSpan? period)
+        public async Task<string> AcquireLeaseAsync(TimeSpan? period, string proposedLeaseId = null)
         {
             await EnsureBlobExistsAsync();
 
             try
             {
-                return await m_blob.AcquireLeaseAsync(period, null);
+                return await m_blob.AcquireLeaseAsync(period, proposedLeaseId);
             }
             catch (StorageException exception)
             {

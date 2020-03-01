@@ -4,9 +4,18 @@ open Fake
 open Fake.AssemblyInfoFile
 open Fake.Git
 open Fake.Testing.XUnit2
+open System.IO
+
+
+let getPath path =
+    Path.GetFullPath(path) + "/"
 
 let binariesDir = "out/bin"
-let nugetDir = "out/nuget"
+let nugetDir = getPath "out/nuget"
+let projectToPack = ["src\Journalist.EventStore\Journalist.EventStore.csproj";
+                     "src\Journalist.LanguageExtensions\Journalist.LanguageExtensions.csproj";
+                     "src\Journalist.WindowsAzure.Storage\Journalist.WindowsAzure.Storage.csproj";
+                     "src\Journalist.WindowsAzure.Storage.Abstractions\Journalist.WindowsAzure.Storage.Abstractions.csproj"]
 
 let applicationProjects = !! "src/**/*.fsproj" ++ "src/**/*.csproj"
 let testProjects = !! "test/**/*.fsproj" ++ "test/**/*.csproj"
@@ -54,18 +63,17 @@ Target "RunIntegrationTests" (fun _ ->
 )
 
 Target "CreatePackages" (fun _ ->
-    Paket.Pack (fun p ->
-        { p with
-            OutputPath = nugetDir
-            Version = release.NugetVersion
-            IncludeReferencedProjects = true
-            ReleaseNotes = release.Notes |> toLines })
+    for project in projectToPack do
+        DotNetCli.Pack (fun p ->
+            { p with
+                OutputPath = nugetDir
+                Project = project})
 )
 
 Target "PublishPackages" (fun _ ->
     Paket.Push (fun p ->
         { p with
-            WorkingDir = nugetDir })
+            WorkingDir = nugetDir})
 )
 
 Target "Release" (fun _ ->
@@ -95,11 +103,11 @@ Target "Default" DoNothing
     ==> "GenerateAssemblyInfo"
     ==> "BuildApp"
     ==> "RunUnitTests"
-    ==> "RunIntegrationTests"
+    //==> "RunIntegrationTests"
     ==> "CopyBuildResults"
     ==> "CreatePackages"
     ==> "Default"
-    ==> "PublishPackages"
-    ==> "Release"
+    //==> "PublishPackages"
+    //==> "Release"
 
 RunTargetOrDefault "Default"

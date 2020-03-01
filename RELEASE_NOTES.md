@@ -1,5 +1,79 @@
+### 0.20.0
+* [WAZ.Storage][New] Add API for query secondary table storage
+
+### 0.19.0
+* [WAZ.Storage][New] Add the overloaded IStorageFactory.CreateQueue method with uri parameter
+
+### 0.18.0
+* [WAZ.Storage][Breaking] Recompile library with 7.2.1 version of WindowsAzure.Storage
+
+### 0.17.0
+* [EventStore][Breaking] Make package for Journalist.WindowsAzure.Storage.Abstractions library
+* [WAZ.Storage][New] Relax version constraint for WindowsAzure.Storage library
+
+### 0.16.1
+* [EventStore][BUGFIX] Enumerate only consumers existing in deployment table
+
+### 0.16.0
+* [EventStore] Add interface for getting stream consumer description
+
+### 0.15.3
+* [LanguageExtensions] Added [Serializable] to Option<T> and NoneOption structs
+
+### 0.15.2
+* [EventStore][BUGFIX] Fix maximumTimeout initialization in PoolingTimeout class
+
+### 0.15.1
+* [EventStore][BUGFIX] Handle exception in PollingJob
+
+### 0.15.0
+* [EventStore] Relax azure storage lib reference constrains
+
+### 0.14.1
+* [EventStore][BUGFIX] Handle "Not Found" error on notification deletion
+
+### 0.14.0
+* [EventStore][Breaking] Store pending notifications in a separate storage table
+
+### 0.13.6
+* [EventStore][Improvement] Performance improvements
+* [WAZ.Storage][New] Add new overrides in IBatchOperation.
+
+### 0.13.5
+* [EventStore][BugFix] Do not update stream header for cursor state
+
+### 0.13.4
+* [WAZ.Storage][Breaking] Optional proposed lease id added to acquire lease method
+
+### 0.13.3
+* [EventStore][BugFix] Fixed the problem when consumer registration ignored already saved consumer id
+
+### 0.13.1
+* [WAZ.Storage][New] Sync methods for storage table batch operation.
+* [EventStore][BugFix] Fix polling timeout start value initialization
+
+### 0.13.0
+* [LanguageExtensions][New] YieldList extensions method
+* [WAZ.Storage][New] Ability to specify row count for table segmented query.
+* [EventStore][BugFix] Correct timeout class behavior
+* [EventStore][Breaking] Refactoring in pending notificaions chaser
+
+### 0.12.0
+* [EventStore][New] Return commit time and offset for restored event
+* [EventStore][BugFix] Correct notification chaser lease timeout value
+* [EventStore][Breaking] New stream consumer always read from start
+* [EventStore][Improvment] Limit the number of notificaions from chaser
+
+### 0.11.0
+* [WAZ.Storage] Update azure storage lib
+* [EventStore][BugFix] Scan all partitions in CloudTableFilterSegmentedRangeQuery
+
+### 0.10.0
+* [EventStore][Breaking] Allow NotificationListener's  to skip position committing
+
 ### 0.9.7
 * [EventStore][BugFix] Issue #4. Call prepare method for PendingNotifications query.
+* [WAZ.Storage][BugFix] Fix CloudTablePointQuery filter when rowKey is empty.
 * [LanguageExtensions][New] Issue #3. Add IsTrue extension method for options.
 
 ### 0.9.6

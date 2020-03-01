@@ -1,28 +1,32 @@
 using System;
+using AutoFixture;
 using Journalist.EventStore.Notifications.Listeners;
 using Journalist.EventStore.UnitTests.Infrastructure.Customizations;
 using Journalist.EventStore.UnitTests.Infrastructure.Stubs;
-using Ploeh.AutoFixture;
 
 namespace Journalist.EventStore.UnitTests.Infrastructure.TestData
 {
     public class BatchEventConsumingNotificationListenerDataAttribute : AutoMoqDataAttribute
     {
-        public BatchEventConsumingNotificationListenerDataAttribute(bool throwException = false)
-        {
-            Fixture.Customize(new EventStreamConsumerMoqCustomization(false));
+        public BatchEventConsumingNotificationListenerDataAttribute(bool throwException = false) :
+            base(fixture =>
+            {
+                fixture.Customize(new EventStreamConsumerMoqCustomization(false));
 
-            Fixture.Customize<BatchEventConsumingNotificationListenerStub>(composer => composer
-                .Do(stub =>
-                {
-                    stub.OnSubscriptionStarted(Fixture.Create<INotificationListenerSubscription>());
-
-                    if (throwException)
+                fixture.Customize<BatchEventConsumingNotificationListenerStub>(composer => composer
+                    .Do(stub =>
                     {
-                        stub.Exception = Fixture.Create<Exception>();
-                    }
+                        stub.OnSubscriptionStarted(fixture.Create<INotificationListenerSubscription>());
 
-                }).OmitAutoProperties());
+                        if (throwException)
+                        {
+                            stub.Exception = fixture.Create<Exception>();
+                        }
+
+                    }).OmitAutoProperties());
+                return fixture;
+            })
+        {
         }
     }
 }

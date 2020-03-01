@@ -1,2 +1,5 @@
-﻿WindowsAzure.Storage
 Serilog
+Microsoft.Azure.Storage.Blob
+Microsoft.Azure.Storage.Queue
+Microsoft.Azure.Cosmos.Table
+Microsoft.Azure.Storage.Common

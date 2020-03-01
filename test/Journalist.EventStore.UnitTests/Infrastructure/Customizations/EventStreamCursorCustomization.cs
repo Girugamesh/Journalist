@@ -1,9 +1,9 @@
 using System.Collections.Generic;
+using AutoFixture;
 using Journalist.EventStore.Events;
 using Journalist.EventStore.Journal;
 using Journalist.EventStore.Journal.StreamCursor;
 using Journalist.Tasks;
-using Ploeh.AutoFixture;
 
 namespace Journalist.EventStore.UnitTests.Infrastructure.Customizations
 {
@@ -37,17 +37,17 @@ namespace Journalist.EventStore.UnitTests.Infrastructure.Customizations
                 fixture.Customize<FetchEvents>(composer => composer
                     .FromFactory(
                         () => version => new FetchEventsResult(
-                            new EventStreamHeader(fixture.Create("ETag"), StreamVersion.Create(3)),
+                            true,
                             fixture.Create<SortedList<StreamVersion, JournaledEvent>>()).YieldTask()));
 
                 fixture.Customize<EventStreamHeader>(composer => composer
                     .FromFactory(() => new EventStreamHeader(
-                        fixture.Create("ETag"),
+                        "ETag",
                         StreamVersion.Create(3))));
 
                 fixture.Customize<IEventStreamCursor>(composer => composer
                     .FromFactory(() => EventStreamCursor.CreateActiveCursor(
-                        EventStreamHeader.Unknown,
+                        new EventStreamHeader("Etag", StreamVersion.Create(3)),
                         StreamVersion.Start,
                         fixture.Create<FetchEvents>())));
             }

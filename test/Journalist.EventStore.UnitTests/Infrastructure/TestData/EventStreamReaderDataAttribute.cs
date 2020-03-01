@@ -4,9 +4,13 @@ namespace Journalist.EventStore.UnitTests.Infrastructure.TestData
 {
     public class EventStreamReaderDataAttribute : AutoMoqDataAttribute
     {
-        public EventStreamReaderDataAttribute(bool emptyCursor = false)
+        public EventStreamReaderDataAttribute(bool emptyCursor = false) :
+            base(fixture =>
+            {
+                fixture.Customize(new EventStreamCursorCustomization(emptyCursor));
+                return fixture;
+            })
         {
-            Fixture.Customize(new EventStreamCursorCustomization(emptyCursor));
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Journalist.EventStore.Journal;
+using Journalist.Options;
 using Journalist.WindowsAzure.Storage.Tables;
 
 namespace Journalist.EventStore.Streams
@@ -29,6 +30,7 @@ namespace Journalist.EventStore.Streams
                 return consumerId;
             }
 
+            var alreadyInserted = false;
             try
             {
                 consumerId = EventStreamReaderId.Create();
@@ -40,9 +42,11 @@ namespace Journalist.EventStore.Streams
                 {
                     throw;
                 }
+
+                alreadyInserted = true;
             }
 
-            if (consumerId == null)
+            if (alreadyInserted)
             {
                 consumerId = await QueryConsumerId(consumerName);
             }
@@ -50,6 +54,21 @@ namespace Journalist.EventStore.Streams
             m_cache.TryAdd(consumerName, consumerId);
 
             return consumerId;
+        }
+
+        public async Task<Option<string>> TryGetNameAsync(EventStreamReaderId eventStreamReaderId)
+        {
+            Require.NotNull(eventStreamReaderId, nameof(eventStreamReaderId));
+
+            var query = m_consumerMetadataTable.PrepareEntityPointQuery(
+                Constants.StorageEntities.MetadataTable.EVENT_STREAM_CONSUMERS_IDS_PK,
+                eventStreamReaderId.ToString());
+
+            var result = await query.ExecuteAsync();
+
+            return result
+                .MayBe()
+                .Select(row => row[Constants.StorageEntities.MetadataTableProperties.EVENT_STREAM_CONSUMER_NAME].ToString());
         }
 
         private async Task<EventStreamReaderId> QueryConsumerId(string consumerName)

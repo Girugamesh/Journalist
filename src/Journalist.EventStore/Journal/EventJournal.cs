@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Journalist.EventStore.Events;
 using Journalist.EventStore.Journal.Persistence;
 using Journalist.EventStore.Journal.Persistence.Operations;
 using Journalist.EventStore.Journal.StreamCursor;
+using Journalist.EventStore.Streams;
 using Journalist.WindowsAzure.Storage.Tables;
 
 namespace Journalist.EventStore.Journal
@@ -48,7 +50,7 @@ namespace Journalist.EventStore.Journal
             return EventStreamCursor.CreateActiveCursor(
                 header,
                 StreamVersion.Start,
-                from => m_table.FetchStreamEvents(streamName, from, header.Version, sliceSize));
+                from => m_table.FetchStreamEvents(streamName, header, from, sliceSize));
         }
 
         public async Task<IEventStreamCursor> OpenEventStreamCursorAsync(string streamName, StreamVersion fromVersion, int sliceSize)
@@ -70,7 +72,7 @@ namespace Journalist.EventStore.Journal
             return EventStreamCursor.CreateActiveCursor(
                 header,
                 fromVersion,
-                from => m_table.FetchStreamEvents(streamName, from, header.Version, sliceSize));
+                from => m_table.FetchStreamEvents(streamName, header, from, sliceSize));
         }
 
         public async Task<IEventStreamCursor> OpenEventStreamCursorAsync(string streamName, EventStreamReaderId readerId, int sliceSize)
@@ -94,7 +96,7 @@ namespace Journalist.EventStore.Journal
             return EventStreamCursor.CreateActiveCursor(
                 header,
                 fromVersion.Increment(),
-                from => m_table.FetchStreamEvents(streamName, from, header.Version, sliceSize));
+                from => m_table.FetchStreamEvents(streamName, header, from, sliceSize));
         }
 
         public async Task<EventStreamHeader> ReadStreamHeaderAsync(string streamName)
@@ -125,9 +127,23 @@ namespace Journalist.EventStore.Journal
             }
 
             return StreamVersion.Create((int)properties[EventJournalTableRowPropertyNames.Version]);
-        }
+		}
 
-        public async Task CommitStreamReaderPositionAsync(
+		public async Task<IEnumerable<StreamReaderDescription>> GetStreamReadersDescriptionsAsync(string streamName)
+		{
+			Require.NotEmpty(streamName, nameof(streamName));
+
+			var streamReadersProperties = await m_table.ReadAllStreamReadersPropertiesAsync(streamName);
+
+			var descriptions = streamReadersProperties.Select(streamReaderProperties => new StreamReaderDescription(
+				streamName,
+				EventStreamReaderId.Parse(streamReaderProperties[KnownProperties.RowKey].ToString().Split('|').Last()),
+				StreamVersion.Create((int)streamReaderProperties[EventJournalTableRowPropertyNames.Version])));
+
+			return descriptions;
+		}
+
+		public async Task CommitStreamReaderPositionAsync(
             string streamName,
             EventStreamReaderId readerId,
             StreamVersion readerVersion)
@@ -138,7 +154,7 @@ namespace Journalist.EventStore.Journal
             var properties = await m_table.ReadStreamReaderPropertiesAsync(streamName, readerId);
             if (properties == null)
             {
-                await m_table.InserStreamReaderPropertiesAsync(
+                await m_table.InsertStreamReaderPropertiesAsync(
                     streamName,
                     readerId,
                     readerVersion);

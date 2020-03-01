@@ -1,7 +1,7 @@
+using AutoFixture;
 using Journalist.EventStore.Notifications.Listeners;
 using Journalist.EventStore.UnitTests.Infrastructure.Customizations;
 using Journalist.EventStore.UnitTests.Infrastructure.Stubs;
-using Ploeh.AutoFixture;
 
 namespace Journalist.EventStore.UnitTests.Infrastructure.TestData
 {
@@ -10,22 +10,26 @@ namespace Journalist.EventStore.UnitTests.Infrastructure.TestData
         public StreamConsumingNotificationListenerDataAttribute(
             bool startedSubscription = true,
             bool processingFailed = false,
-            bool consumerReceivingFailed = false)
-        {
-            Fixture.Customize(new EventStreamConsumerMoqCustomization(consumerReceivingFailed));
-            Fixture.Customize(new EventStreamConsumerMoqCustomization(consumerReceivingFailed));
+            bool consumerReceivingFailed = false) : base(
+            fixture =>
+            {
+                fixture.Customize(new EventStreamConsumerMoqCustomization(consumerReceivingFailed));
+                fixture.Customize(new EventStreamConsumerMoqCustomization(consumerReceivingFailed));
 
-            Fixture.Customize<StreamConsumingNotificationListenerStub>(composer => composer
-                .Do(stub =>
-                {
-                    if (startedSubscription)
+                fixture.Customize<StreamConsumingNotificationListenerStub>(composer => composer
+                    .Do(stub =>
                     {
-                        stub.OnSubscriptionStarted(Fixture.Create<INotificationListenerSubscription>());
-                    }
+                        if (startedSubscription)
+                        {
+                            stub.OnSubscriptionStarted(fixture.Create<INotificationListenerSubscription>());
+                        }
 
-                    stub.ProcessingCompleted = !processingFailed;
-                })
-                .OmitAutoProperties());
+                        stub.ProcessingCompleted = !processingFailed;
+                    })
+                    .OmitAutoProperties());
+                return fixture;
+            })
+        {
         }
     }
 }

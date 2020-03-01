@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.Connection;
 using Journalist.EventStore.Streams;
 using Journalist.EventStore.UnitTests.Infrastructure.TestData;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Connection
@@ -23,8 +23,7 @@ namespace Journalist.EventStore.UnitTests.Connection
         [Theory, AutoMoqData]
         public void Constructor_ChangeConnectionStateToActive(
             [Frozen] Mock<IEventStoreConnectionState> stateMock,
-            EventStoreConnection eventStoreConnection,
-            string streamName)
+            EventStoreConnection eventStoreConnection)
         {
             stateMock.Verify(self => self.ChangeToCreated(eventStoreConnection));
         }
@@ -32,8 +31,7 @@ namespace Journalist.EventStore.UnitTests.Connection
         [Theory, AutoMoqData]
         public void Close_ChangeConnectionStateClosed(
             [Frozen] Mock<IEventStoreConnectionState> stateMock,
-            EventStoreConnection eventStoreConnection,
-            string streamName)
+            EventStoreConnection eventStoreConnection)
         {
             eventStoreConnection.Close();
 
@@ -43,7 +41,6 @@ namespace Journalist.EventStore.UnitTests.Connection
 
         [Theory, AutoMoqData]
         public async Task CreateStreamConsumerAsync_WhenConsumerExists_CreatesIt(
-            [Frozen] Mock<IEventStreamConsumers> consumerRegistryMock,
             EventStoreConnection eventStoreConnection,
             string streamName,
             string consumerName)

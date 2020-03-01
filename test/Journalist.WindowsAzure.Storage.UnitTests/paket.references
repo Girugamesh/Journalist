@@ -1,2 +1,2 @@
-﻿xunit
-WindowsAzure.Storage
+xunit
+Microsoft.Azure.Cosmos.Table

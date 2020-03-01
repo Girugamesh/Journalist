@@ -2,11 +2,10 @@ using System;
 using Journalist.WindowsAzure.Storage.Blobs;
 using Journalist.WindowsAzure.Storage.Queues;
 using Journalist.WindowsAzure.Storage.Tables;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Queue;
-using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.Queue;
+using Microsoft.Azure.Cosmos.Table;
+using CommonCloudStorageAccount = Microsoft.Azure.Storage.CloudStorageAccount;
 
 namespace Journalist.WindowsAzure.Storage
 {
@@ -37,6 +36,13 @@ namespace Journalist.WindowsAzure.Storage
             return new CloudQueueAdapter(CreateQueueFactory(queueUri, sasToken, queueName));
         }
 
+        public ICloudQueue CreateQueue(Uri queue)
+        {
+            Require.NotNull(queue, "queue");
+
+            return new CloudQueueAdapter(() => new CloudQueue(queue));
+        }
+
         public ICloudBlobContainer CreateBlobContainer(string connectionString, string containerName)
         {
             Require.NotEmpty(connectionString, "connectionString");
@@ -53,7 +59,7 @@ namespace Journalist.WindowsAzure.Storage
 
                 var tableClient = account.CreateCloudTableClient();
                 var table = tableClient.GetTableReference(tableName);
-                table.CreateIfNotExists();
+                table.CreateIfNotExistsAsync().GetAwaiter().GetResult();
 
                 return table;
             };
@@ -63,10 +69,14 @@ namespace Journalist.WindowsAzure.Storage
         {
             return () =>
             {
-                var account = CloudStorageAccount.Parse(connectionString);
+                var account = CommonCloudStorageAccount.Parse(connectionString);
                 var queueClient = account.CreateCloudQueueClient();
                 var queue = queueClient.GetQueueReference(queueName);
+#if NET451
                 queue.CreateIfNotExists();
+#else
+                queue.CreateIfNotExistsAsync().GetAwaiter().GetResult();
+#endif
 
                 return queue;
             };
@@ -76,9 +86,10 @@ namespace Journalist.WindowsAzure.Storage
         {
             return () =>
             {
-                var queueClient = new CloudQueueClient(queueUri, new StorageCredentials(sasToken));
+                var queueClient = new CloudQueueClient(queueUri, new Microsoft.Azure.Storage.Auth.StorageCredentials(sasToken));
                 var queue = queueClient.GetQueueReference(queueName);
-                queue.CreateIfNotExists();
+
+                queue.CreateIfNotExistsAsync().GetAwaiter().GetResult();
 
                 return queue;
             };
@@ -88,11 +99,11 @@ namespace Journalist.WindowsAzure.Storage
         {
             return () =>
             {
-                var account = CloudStorageAccount.Parse(connectionString);
+                var account = CommonCloudStorageAccount.Parse(connectionString);
 
                 var blobClient = account.CreateCloudBlobClient();
                 var container = blobClient.GetContainerReference(containerName);
-                container.CreateIfNotExists();
+                container.CreateIfNotExistsAsync().GetAwaiter().GetResult();
 
                 return container;
             };

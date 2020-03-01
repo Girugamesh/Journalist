@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.Connection;
 using Journalist.EventStore.Journal;
 using Journalist.EventStore.Notifications;
@@ -8,7 +9,6 @@ using Journalist.EventStore.Notifications.Listeners;
 using Journalist.EventStore.Notifications.Types;
 using Journalist.EventStore.UnitTests.Infrastructure.TestData;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Notifications.Listeners
@@ -28,19 +28,16 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
 
         [Theory, NotificationListenerSubscriptionData]
         public void Stop_WhenSubscriptionHasNotBeenStarted_Throws(
-            [Frozen] Mock<INotificationListener> listenerMock,
-            NotificationListenerSubscription subscription,
-            INotification notification)
+            NotificationListenerSubscription subscription)
         {
-            Assert.Throws<InvalidOperationException>(() => subscription.Stop());
+            Assert.Throws<InvalidOperationException>(subscription.Stop);
         }
 
         [Theory, NotificationListenerSubscriptionData]
         public void Stop_NotifyListener(
             [Frozen] Mock<INotificationListener> listenerMock,
             IEventStoreConnection connection,
-            NotificationListenerSubscription subscription,
-            INotification notification)
+            NotificationListenerSubscription subscription)
         {
             subscription.Start(connection);
             subscription.Stop();
@@ -69,8 +66,7 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
             [Frozen] Mock<INotificationListener> listenerMock,
             IEventStoreConnection connection,
             NotificationListenerSubscription subscription,
-            EventStreamUpdated notification,
-            EventStreamReaderId consumerId)
+            EventStreamUpdated notification)
         {
             subscription.Start(connection);
 
@@ -84,7 +80,6 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
         [Theory, NotificationListenerSubscriptionData]
         public async Task HandleNotificationAsync_WhenNotificationAddressedToConsumer_PropagatesNotificationToTheListener(
             [Frozen] Mock<INotificationListener> listenerMock,
-            [Frozen] EventStreamReaderId consumerId,
             IEventStoreConnection connection,
             NotificationListenerSubscription subscription,
             EventStreamUpdated notification)
@@ -133,14 +128,13 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
 
         [Theory, NotificationListenerSubscriptionData]
         public void CreateSubscriptionConsumerAsync_WhenSubscriptionWasStarted_UseConnection(
-            [Frozen] EventStreamReaderId consumerId,
             Mock<IEventStoreConnection> connectionMock,
             NotificationListenerSubscription subscription,
             string streamName)
         {
             subscription.Start(connectionMock.Object);
 
-            subscription.CreateSubscriptionConsumerAsync(streamName, true);
+            subscription.CreateSubscriptionConsumerAsync(streamName);
 
             connectionMock.Verify(self => self.CreateStreamConsumerAsync(
                 It.IsAny<Action<IEventStreamConsumerConfiguration>>()));
@@ -148,12 +142,11 @@ namespace Journalist.EventStore.UnitTests.Notifications.Listeners
 
         [Theory, NotificationListenerSubscriptionData]
         public async Task CreateSubscriptionConsumerAsync_WhenSubscriptionWasNotStarted_Throws(
-            [Frozen] EventStreamReaderId consumerId,
             NotificationListenerSubscription subscription,
             string streamName)
         {
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => subscription.CreateSubscriptionConsumerAsync(streamName, true));
+                () => subscription.CreateSubscriptionConsumerAsync(streamName));
         }
 
         [Theory, NotificationListenerSubscriptionData]

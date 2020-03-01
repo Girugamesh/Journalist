@@ -1,5 +1,5 @@
 using System.IO;
-using Ploeh.AutoFixture;
+using AutoFixture;
 
 namespace Journalist.EventStore.UnitTests.Infrastructure.Customizations
 {

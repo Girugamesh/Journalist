@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoFixture;
+using AutoFixture.AutoMoq;
 using Journalist.EventStore.Notifications;
 using Journalist.EventStore.Notifications.Channels;
 using Journalist.EventStore.Notifications.Formatters;
 using Journalist.EventStore.Notifications.Types;
 using Journalist.WindowsAzure.Storage;
-using Ploeh.AutoFixture;
-using Ploeh.AutoFixture.AutoMoq;
 using Xunit;
 
 namespace Journalist.EventStore.IntegrationTests.Notifications.Channel
@@ -28,14 +28,14 @@ namespace Journalist.EventStore.IntegrationTests.Notifications.Channel
 
             m_channel = new NotificationsChannel(queues, new NotificationFormatter());
 
-            m_fixture = new Fixture().Customize(new AutoConfiguredMoqCustomization());
+            m_fixture = new Fixture().Customize(new AutoMoqCustomization { ConfigureMembers = true });
             m_fixture.RepeatCount = 16 * 2;
         }
 
         [Fact]
         public async Task ChannelReceivesAllSendedNotifications()
         {
-            var notifications = m_fixture.CreateMany<EventStreamUpdated>();
+            var notifications = m_fixture.CreateMany<EventStreamUpdated>().ToList();
             foreach (var notification in notifications)
             {
                 await m_channel.SendAsync(notification);

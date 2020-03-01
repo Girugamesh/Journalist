@@ -1,6 +1,6 @@
 using System;
 using Journalist.WindowsAzure.Storage.Internals;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob;
 
 namespace Journalist.WindowsAzure.Storage.Blobs
 {

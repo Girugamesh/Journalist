@@ -1,2 +1,6 @@
-﻿type project
+type project
 projectUrl https://github.com/ar3cka/Journalist
+files
+    bin/Release/netstandard2.0/* ==> lib\netstandard2.0\
+    bin/Release/netstandard2.1/* ==> lib\netstandard2.1
+

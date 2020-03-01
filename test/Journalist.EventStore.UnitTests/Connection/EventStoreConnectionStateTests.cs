@@ -116,7 +116,6 @@ namespace Journalist.EventStore.UnitTests.Connection
 
         [Theory, AutoMoqData]
         public void ChangeToClosed_WhenObejectIsNotInClosingState_Throws(
-            IEventStoreConnection connection,
             EventStoreConnectionState state)
         {
             Assert.Throws<InvalidOperationException>(() => state.ChangeToClosed());

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using AutoFixture;
 using Journalist.EventStore.Events;
-using Ploeh.AutoFixture;
 
 namespace Journalist.EventStore.UnitTests.Infrastructure.Customizations
 {
@@ -11,7 +11,7 @@ namespace Journalist.EventStore.UnitTests.Infrastructure.Customizations
             fixture.Customize<JournaledEvent>(composer => composer
                 .FromFactory(() => JournaledEvent.Create(
                     new object(),
-                    (_, type, writer) => writer.WriteLine(fixture.Create("EventPayload")))));
+                    (_, type, writer) => writer.WriteLine("EventPayload"))));
 
             fixture.Customize<IReadOnlyList<JournaledEvent>>(composer => composer
                 .FromFactory((JournaledEvent[] events) => events));

@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.Events;
 using Journalist.EventStore.Journal;
 using Journalist.EventStore.Streams;
 using Journalist.EventStore.UnitTests.Infrastructure.Stubs;
 using Journalist.EventStore.UnitTests.Infrastructure.TestData;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Streams

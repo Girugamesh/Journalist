@@ -5,13 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Journalist.Collections;
 using Journalist.Extensions;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace Journalist.WindowsAzure.Storage.Tables
 {
-    public delegate Task<TableQuerySegment<DynamicTableEntity>> FetchAsync(TableQuery<DynamicTableEntity> query, TableContinuationToken token);
-    public delegate TableQuerySegment<DynamicTableEntity> FetchSync(TableQuery<DynamicTableEntity> query, TableContinuationToken token);
+    public delegate Task<TableQuerySegment<DynamicTableEntity>> FetchAsync(TableQuery<DynamicTableEntity> query, TableContinuationToken token, TableRequestOptions requestOptions);
+    public delegate TableQuerySegment<DynamicTableEntity> FetchSync(TableQuery<DynamicTableEntity> query, TableContinuationToken token, TableRequestOptions requestOptions);
 
     public abstract class CloudTableSegmentedQuery
     {
@@ -21,6 +20,7 @@ namespace Journalist.WindowsAzure.Storage.Tables
         private readonly string[] m_properties;
         private readonly FetchAsync m_fetchEntitiesAsync;
         private readonly FetchSync m_fetchEntities;
+        private readonly TableRequestOptions m_requestOptions;
         private readonly ITableEntityConverter m_tableEntityConverter;
 
         private TableContinuationToken m_continuationToken;
@@ -31,7 +31,7 @@ namespace Journalist.WindowsAzure.Storage.Tables
             string[] properties,
             FetchAsync fetchEntitiesAsync,
             FetchSync fetchEntities,
-
+            TableRequestOptions requestOptions,
             ITableEntityConverter tableEntityConverter)
         {
             Require.True(!take.HasValue || take > 0, "take", "Value should contains positive value");
@@ -44,6 +44,7 @@ namespace Journalist.WindowsAzure.Storage.Tables
             m_properties = properties;
             m_fetchEntitiesAsync = fetchEntitiesAsync;
             m_fetchEntities = fetchEntities;
+            m_requestOptions = requestOptions;
             m_tableEntityConverter = tableEntityConverter;
             m_continuationToken = null;
         }
@@ -56,7 +57,7 @@ namespace Journalist.WindowsAzure.Storage.Tables
             var result = AllocateResult();
             SetContinuationToken(continuationToken);
 
-            var queryResult = await m_fetchEntitiesAsync(query, m_continuationToken);
+            var queryResult = await m_fetchEntitiesAsync(query, m_continuationToken, m_requestOptions);
             result.AddRange(queryResult.Results.Select(m_tableEntityConverter.CreatePropertiesFromDynamicTableEntity));
 
             UpdateContinuationToken(queryResult);
@@ -72,7 +73,7 @@ namespace Journalist.WindowsAzure.Storage.Tables
             var result = AllocateResult();
             SetContinuationToken(continuationToken);
 
-            var queryResult = m_fetchEntities(query, m_continuationToken);
+            var queryResult = m_fetchEntities(query, m_continuationToken, m_requestOptions);
             result.AddRange(queryResult.Results.Select(m_tableEntityConverter.CreatePropertiesFromDynamicTableEntity));
 
             UpdateContinuationToken(queryResult);
@@ -109,7 +110,7 @@ namespace Journalist.WindowsAzure.Storage.Tables
             m_executionStarted = true;
         }
 
-        private TableContinuationToken ParseContinuationTokenBytes(byte[] continuationTokenBytes)
+        private static TableContinuationToken ParseContinuationTokenBytes(byte[] continuationTokenBytes)
         {
             var parts = Encoding.UTF8.GetString(continuationTokenBytes).Split(s_separators);
 
@@ -128,8 +129,8 @@ namespace Journalist.WindowsAzure.Storage.Tables
 
         private List<Dictionary<string, object>> AllocateResult()
         {
-            return m_take.HasValue 
-                ? new List<Dictionary<string, object>>(m_take.Value) 
+            return m_take.HasValue
+                ? new List<Dictionary<string, object>>(m_take.Value)
                 : new List<Dictionary<string, object>>();
         }
 
@@ -147,12 +148,6 @@ namespace Journalist.WindowsAzure.Storage.Tables
             return query;
         }
 
-        protected bool ReadNextSegment
-        {
-            get
-            {
-                return m_executionStarted && m_continuationToken != null;
-            }
-        }
+        protected bool ReadNextSegment => m_executionStarted && m_continuationToken != null;
     }
 }

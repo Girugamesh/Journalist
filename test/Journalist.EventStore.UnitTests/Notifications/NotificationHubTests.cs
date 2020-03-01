@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.Connection;
 using Journalist.EventStore.Notifications;
 using Journalist.EventStore.Notifications.Channels;
-using Journalist.EventStore.Notifications.Formatters;
 using Journalist.EventStore.Notifications.Listeners;
 using Journalist.EventStore.Notifications.Processing;
 using Journalist.EventStore.Notifications.Types;
 using Journalist.EventStore.UnitTests.Infrastructure.Stubs;
 using Journalist.EventStore.UnitTests.Infrastructure.TestData;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Notifications
@@ -20,7 +19,6 @@ namespace Journalist.EventStore.UnitTests.Notifications
     {
         [Theory, NotificationHubData]
         public async Task NotifyAsync_SendsNotificationBytesToChannel(
-            [Frozen] Mock<INotificationFormatter> formatterMock,
             [Frozen] Mock<INotificationsChannel> channelMock,
             NotificationHub hub,
             EventStreamUpdated notification)
@@ -44,7 +42,6 @@ namespace Journalist.EventStore.UnitTests.Notifications
         [Theory, NotificationHubData]
         public void StopNotificationProcessing_NotifiesListener(
             [Frozen] Mock<INotificationListener> listenerMock,
-            IEventStoreConnection connection,
             NotificationHub hub)
         {
             hub.StopNotificationProcessing();
@@ -96,8 +93,7 @@ namespace Journalist.EventStore.UnitTests.Notifications
 
         [Theory, NotificationHubData(emptyChannel: true)]
         public async Task PollingFunc_WhenChannelIsEmpty_ReturnsFalse(
-            [Frozen] PollingJobStub jobStub,
-            NotificationHub hub)
+            [Frozen] PollingJobStub jobStub)
         {
             var pollResult = await jobStub.Poll();
 
@@ -106,8 +102,7 @@ namespace Journalist.EventStore.UnitTests.Notifications
 
         [Theory, NotificationHubData]
         public async Task PollingFunc_WhenChannelIsNotEmpty_ReturnsTrue(
-            [Frozen] PollingJobStub jobStub,
-            NotificationHub hub)
+            [Frozen] PollingJobStub jobStub)
         {
             var pollResult = await jobStub.Poll();
 
@@ -116,10 +111,8 @@ namespace Journalist.EventStore.UnitTests.Notifications
 
         [Theory, NotificationHubData]
         public async Task PollingFunc_WhenChannelIsNotEmpty_SendsNotificationsToProcessor(
-            [Frozen] Mock<INotificationListener> listenerMock,
             [Frozen] Mock<IReceivedNotificationProcessor> processorMock,
-            [Frozen] PollingJobStub jobStub,
-            NotificationHub hub)
+            [Frozen] PollingJobStub jobStub)
         {
             await jobStub.Poll();
 

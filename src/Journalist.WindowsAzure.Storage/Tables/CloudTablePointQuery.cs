@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Journalist.Collections;
-using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace Journalist.WindowsAzure.Storage.Tables
 {
@@ -17,8 +17,9 @@ namespace Journalist.WindowsAzure.Storage.Tables
             string[] properties,
             FetchAsync fetchAsync,
             FetchSync fetchSync,
+            TableRequestOptions requestOptions,
             ITableEntityConverter tableEntityConverter)
-            : base(1, properties, fetchAsync, fetchSync, tableEntityConverter)
+            : base(1, properties, fetchAsync, fetchSync, requestOptions, tableEntityConverter)
         {
             Require.NotEmpty(partitionKey, "partitionKey");
             Require.NotNull(rowKey, "rowKey");

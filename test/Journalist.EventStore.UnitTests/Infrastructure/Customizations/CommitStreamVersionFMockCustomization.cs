@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using AutoFixture;
 using Journalist.EventStore.Events;
 using Journalist.EventStore.UnitTests.Infrastructure.Stubs;
-using Ploeh.AutoFixture;
 
 namespace Journalist.EventStore.UnitTests.Infrastructure.Customizations
 {

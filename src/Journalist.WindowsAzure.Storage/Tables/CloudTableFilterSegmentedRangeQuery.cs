@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Journalist.Collections;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace Journalist.WindowsAzure.Storage.Tables
 {
@@ -14,8 +15,9 @@ namespace Journalist.WindowsAzure.Storage.Tables
             string[] properties,
             FetchAsync fetchAsync,
             FetchSync fetchSync,
+            TableRequestOptions requestOptions,
             ITableEntityConverter tableEntityConverter)
-            : base(take, properties, fetchAsync, fetchSync, tableEntityConverter)
+            : base(take, properties, fetchAsync, fetchSync, requestOptions, tableEntityConverter)
         {
             m_filter = filter;
         }
@@ -44,20 +46,8 @@ namespace Journalist.WindowsAzure.Storage.Tables
             return FetchEntities(m_filter, continuationToken);
         }
 
-        public bool HasMore
-        {
-            get
-            {
-                return ReadNextSegment;
-            }
-        }
+        public bool HasMore => ReadNextSegment;
 
-        public byte[] ContinuationToken
-        {
-            get
-            {
-                return GetContinuationTokenBytes();
-            }
-        }
+        public byte[] ContinuationToken => GetContinuationTokenBytes();
     }
 }

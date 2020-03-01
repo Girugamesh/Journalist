@@ -1,4 +1,6 @@
-﻿Xunit
+Xunit
 AutoFixture.AutoMoq
 AutoFixture.Xunit2
-WindowsAzure.Storage
+Microsoft.Azure.Storage.Blob
+Microsoft.Azure.Cosmos.Table
+Serilog

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Journalist.Collections;
 using Journalist.EventStore.Events;
 using Journalist.EventStore.Journal.Persistence.Operations;
-using Journalist.EventStore.Journal.Persistence.Queries;
 using Journalist.EventStore.Journal.StreamCursor;
 using Journalist.Extensions;
 using Journalist.WindowsAzure.Storage.Tables;
@@ -12,6 +12,11 @@ namespace Journalist.EventStore.Journal.Persistence
 {
     public class EventJournalTable : IEventJournalTable
     {
+        private static class Properties
+        {
+            public static readonly string[] ReferenceRowHead = EventJournalTableRowPropertyNames.Version.YieldArray();
+        }
+
         private readonly ICloudTable m_table;
 
         public EventJournalTable(ICloudTable table)
@@ -26,16 +31,6 @@ namespace Journalist.EventStore.Journal.Persistence
             return new AppendOperation(m_table, streamName, header);
         }
 
-        public PendingNotificationsQuery CreatePendingNotificationsQuery()
-        {
-            return new PendingNotificationsQuery(m_table);
-        }
-
-        public DeletePendingNotificationOperation CreateDeletePendingNotificationOperation(string streamName)
-        {
-            return new DeletePendingNotificationOperation(m_table, streamName);
-        }
-
         public Task<IDictionary<string, object>> ReadStreamHeadPropertiesAsync(string streamName)
         {
             return ReadReferenceRowHeadAsync(streamName, "HEAD");
@@ -45,18 +40,27 @@ namespace Journalist.EventStore.Journal.Persistence
         {
             return ReadReferenceRowHeadAsync(streamName, "RDR|" + readerId);
         }
+		
+		public async Task<IEnumerable<IDictionary<string, object>>> ReadAllStreamReadersPropertiesAsync(string streamName)
+		{
+			Require.NotEmpty(streamName, nameof(streamName));
 
-        public async Task InserStreamReaderPropertiesAsync(string streamName, EventStreamReaderId readerId, StreamVersion version)
+			var query = m_table.PrepareEntityRangeQueryByRows(streamName, "RDR", "RDS", Properties.ReferenceRowHead);
+
+			var headProperties = await query.ExecuteAsync();
+
+			return headProperties ?? Enumerable.Empty<IDictionary<string, object>>();
+		}
+
+		public async Task InsertStreamReaderPropertiesAsync(string streamName, EventStreamReaderId readerId, StreamVersion version)
         {
             var operation = m_table.PrepareBatchOperation();
 
             operation.Insert(
                 streamName,
                 "RDR|" + readerId,
-                new Dictionary<string, object>
-                {
-                    { EventJournalTableRowPropertyNames.Version, (int)version }
-                });
+                EventJournalTableRowPropertyNames.Version,
+                (int)version);
 
             await operation.ExecuteAsync();
         }
@@ -69,24 +73,21 @@ namespace Journalist.EventStore.Journal.Persistence
                 streamName,
                 "RDR|" + readerId,
                 etag,
-                new Dictionary<string, object>
-                {
-                    { EventJournalTableRowPropertyNames.Version, (int)version }
-                });
+                EventJournalTableRowPropertyNames.Version,
+                (int)version);
 
             await operation.ExecuteAsync();
         }
 
-        public async Task<FetchEventsResult> FetchStreamEvents(
-            string stream,
-            StreamVersion fromVersion,
-            StreamVersion toVersion,
-            int sliceSize)
+        public async Task<FetchEventsResult> FetchStreamEvents(string stream, EventStreamHeader header, StreamVersion fromVersion, int sliceSize)
         {
-            var nextSliceVersion = fromVersion.Increment(sliceSize);
-            if (nextSliceVersion >= toVersion)
+            // fromVersion already in slice
+            var isFetchingCompleted = false;
+            var nextSliceVersion = fromVersion.Increment(sliceSize - 1);
+            if (nextSliceVersion >= header.Version)
             {
-                nextSliceVersion = toVersion;
+                nextSliceVersion = header.Version;
+                isFetchingCompleted = true;
             }
 
             const string queryTemplate =
@@ -102,23 +103,16 @@ namespace Journalist.EventStore.Journal.Persistence
             var queryResult = await query.ExecuteAsync();
 
             var events = new SortedList<StreamVersion, JournaledEvent>(sliceSize);
-            var streamPosition = EventStreamHeader.Unknown;
             foreach (var properties in queryResult)
             {
                 var rowKey = (string)properties[KnownProperties.RowKey];
-                if (rowKey.EqualsCi("HEAD"))
-                {
-                    streamPosition = new EventStreamHeader(
-                        (string)properties[KnownProperties.ETag],
-                        StreamVersion.Create((int)properties[EventJournalTableRowPropertyNames.Version]));
-                }
-                else
+                if (!rowKey.EqualsCi("HEAD"))
                 {
                     events.Add(StreamVersion.Parse((string)properties[KnownProperties.RowKey]), JournaledEvent.Create(properties));
                 }
             }
 
-            return new FetchEventsResult(streamPosition, events);
+            return new FetchEventsResult(isFetchingCompleted, events);
         }
 
         private async Task<IDictionary<string, object>> ReadReferenceRowHeadAsync(string streamName, string referenceType)
@@ -126,7 +120,7 @@ namespace Journalist.EventStore.Journal.Persistence
             var query = m_table.PrepareEntityPointQuery(
                 streamName,
                 referenceType,
-                EventJournalTableRowPropertyNames.Version.YieldArray());
+                Properties.ReferenceRowHead);
 
             var headProperties = await query.ExecuteAsync();
 

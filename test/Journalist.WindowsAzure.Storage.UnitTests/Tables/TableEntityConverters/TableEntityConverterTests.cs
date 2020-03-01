@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Journalist.WindowsAzure.Storage.Tables.TableEntityConverters;
 using Xunit;
 
@@ -11,10 +12,11 @@ namespace Journalist.WindowsAzure.Storage.UnitTests.Tables.TableEntityConverters
         {
             var c = new TableEntityConverter();
 
-            var entity = c.CreateDynamicTableEntityFromProperties(new Dictionary<string, object>
-            {
-                { "MyProp", null }
-            });
+            var entity = c.CreateDynamicTableEntityFromProperties(new ReadOnlyDictionary<string, object>(
+                new Dictionary<string, object>
+                {
+                    { "MyProp", null }
+                }));
 
             Assert.False(entity.Properties.ContainsKey("MyProp"));
         }

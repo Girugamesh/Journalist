@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.Streams;
 using Journalist.EventStore.UnitTests.Infrastructure.TestData;
 using Journalist.Tasks;
 using Journalist.WindowsAzure.Storage.Blobs;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Streams
@@ -17,7 +17,6 @@ namespace Journalist.EventStore.UnitTests.Streams
         [CloudBlockBlobContainerData(leaseLocked: true)]
         public async Task PromoteToLeader_CreatesBlobWithConsumerAndStreamSpecificPath(
             [Frozen] Mock<ICloudBlobContainer> containerMock,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             await session.PromoteToLeaderAsync();
@@ -28,7 +27,6 @@ namespace Journalist.EventStore.UnitTests.Streams
         [Theory]
         [CloudBlockBlobContainerData(leaseLocked: true)]
         public async Task PromoteToLeader_WhenBlobLeaseLocked_ReturnsFalse(
-            string consumerId,
             EventStreamConsumingSession session)
         {
             Assert.False(await session.PromoteToLeaderAsync());
@@ -37,7 +35,6 @@ namespace Journalist.EventStore.UnitTests.Streams
         [Theory]
         [CloudBlockBlobContainerData]
         public async Task PromoteToLeader_WhenBlobLeaseIsNotLocked_ReturnsTrue(
-            string consumerId,
             EventStreamConsumingSession session)
         {
             Assert.True(await session.PromoteToLeaderAsync());
@@ -47,12 +44,11 @@ namespace Journalist.EventStore.UnitTests.Streams
         [CloudBlockBlobContainerData]
         public async Task PromoteToLeader_AcquiresBlobLease(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             await session.PromoteToLeaderAsync();
 
-            blobMock.Verify(self => self.AcquireLeaseAsync(null));
+            blobMock.Verify(self => self.AcquireLeaseAsync(null, null));
         }
 
         [Theory]
@@ -61,11 +57,10 @@ namespace Journalist.EventStore.UnitTests.Streams
             [Frozen] Mock<ICloudBlockBlob> blobMock,
             [Frozen] IDictionary<string, string> metadata,
             string leaseId,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             blobMock
-                .Setup(self => self.AcquireLeaseAsync(null))
+                .Setup(self => self.AcquireLeaseAsync(null, null))
                 .Returns(leaseId.YieldTask());
 
             await session.PromoteToLeaderAsync();
@@ -78,8 +73,6 @@ namespace Journalist.EventStore.UnitTests.Streams
         [CloudBlockBlobContainerData]
         public async Task PromoteToLeader_WhenBlobLeaseHaveBeenAlreadyAcquired_UpdatesMetadataOnce(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
-            [Frozen] IDictionary<string, string> metadata,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             await session.PromoteToLeaderAsync();
@@ -92,7 +85,6 @@ namespace Journalist.EventStore.UnitTests.Streams
         [CloudBlockBlobContainerData(leaseLocked: true)]
         public async Task PromoteToLeader_WhenBlobLeaseHaveNotBeenAcquired_FetchesAttributes(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             await session.PromoteToLeaderAsync();
@@ -105,7 +97,6 @@ namespace Journalist.EventStore.UnitTests.Streams
         public async Task PromoteToLeader_WhenBlobLeaseHaveNotBeenAcquiredAndTimeoutExpired_BreaksLease(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
             [Frozen] IDictionary<string, string> metadata,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             metadata["SessionExpiresOn"] = DateTimeOffset.UtcNow.AddMinutes(-10).ToString("O");
@@ -120,7 +111,6 @@ namespace Journalist.EventStore.UnitTests.Streams
         public async Task PromoteToLeader_WhenBlobLeaseHaveNotBeenAcquiredAndTimeoutNotExpired_DoesNotBreakLease(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
             [Frozen] IDictionary<string, string> metadata,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             metadata["SessionExpiresOn"] = DateTimeOffset.UtcNow.AddMinutes(10).ToString("O");
@@ -134,39 +124,36 @@ namespace Journalist.EventStore.UnitTests.Streams
         [CloudBlockBlobContainerData]
         public async Task PromoteToLeader_WhenBlobLeaseHaveBeenAcquired_TakesLeaseOnce(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             await session.PromoteToLeaderAsync();
             await session.PromoteToLeaderAsync();
 
-            blobMock.Verify(self => self.AcquireLeaseAsync(null), Times.Once());
+            blobMock.Verify(self => self.AcquireLeaseAsync(null, null), Times.Once());
         }
 
         [Theory]
         [CloudBlockBlobContainerData]
         public async Task PromoteToLeader_WhenBlobLeaseWasFreed_TakesLeaseOnce(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
-            string consumerId,
             EventStreamConsumingSession session)
         {
             await session.PromoteToLeaderAsync();
             await session.FreeAsync();
             await session.PromoteToLeaderAsync();
 
-            blobMock.Verify(self => self.AcquireLeaseAsync(null), Times.Exactly(2));
+            blobMock.Verify(self => self.AcquireLeaseAsync(null, null), Times.Exactly(2));
         }
 
         [Theory]
         [CloudBlockBlobContainerData]
         public async Task FreeAsync_ReleasesAcquiredBlobLease(
             [Frozen] Mock<ICloudBlockBlob> blobMock,
-            string consumerId,
             string leaseId,
             EventStreamConsumingSession session)
         {
             blobMock
-                .Setup(self => self.AcquireLeaseAsync(null))
+                .Setup(self => self.AcquireLeaseAsync(null, null))
                 .Returns(leaseId.YieldTask());
 
             await session.PromoteToLeaderAsync();

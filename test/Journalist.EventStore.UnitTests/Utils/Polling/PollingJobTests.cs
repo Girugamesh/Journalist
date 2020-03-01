@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Journalist.EventStore.UnitTests.Infrastructure.TestData;
 using Journalist.EventStore.Utils.Polling;
 using Moq;
-using Ploeh.AutoFixture.Xunit2;
 using Xunit;
 
 namespace Journalist.EventStore.UnitTests.Utils.Polling
@@ -35,6 +35,17 @@ namespace Journalist.EventStore.UnitTests.Utils.Polling
 
         [Theory, PollingJobData(successfulPoll: false)]
         public async Task StartedJob_WhenFuncReturnsFalse_IncreasesTimeout(
+            [Frozen] Mock<IPollingTimeout> timeout,
+            [Frozen] PollingFunction pollingFunc,
+            PollingJob pollingJob)
+        {
+            await RunWaitStopJob(pollingJob, pollingFunc);
+
+            timeout.Verify(self => self.Increase(), Times.AtLeastOnce());
+        }
+
+        [Theory, PollingJobData(fail: true)]
+        public async Task StartedJob_WhenFuncThrows_IncreasesTimeout(
             [Frozen] Mock<IPollingTimeout> timeout,
             [Frozen] PollingFunction pollingFunc,
             PollingJob pollingJob)

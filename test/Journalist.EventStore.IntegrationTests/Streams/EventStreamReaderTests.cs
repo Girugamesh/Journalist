@@ -18,8 +18,8 @@ namespace Journalist.EventStore.IntegrationTests.Streams
             StreamName = "stream-" + Guid.NewGuid().ToString("N");
         }
 
-        [Theory, AutoMoqData]
-        public async Task Reader_WhenStreamNotExists_ReturnsReaderCompletedReaderInLastPosition(JournaledEvent[] events)
+        [Fact]
+        public async Task Reader_WhenStreamNotExists_ReturnsReaderCompletedReaderInLastPosition()
         {
             var reader = await Connection.CreateStreamReaderAsync(StreamName);
 
@@ -55,10 +55,10 @@ namespace Journalist.EventStore.IntegrationTests.Streams
             Assert.Equal(dummyEvents[(int)writer.StreamVersion - 1], reader.Events[0]);
         }
 
-        public string StreamName
+        private string StreamName
         {
             get;
-            private set;
+            set;
         }
 
         public IEventStoreConnection Connection

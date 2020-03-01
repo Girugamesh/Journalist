@@ -2,12 +2,16 @@
 using System.Reflection;
 
 [assembly: AssemblyProductAttribute("Journalist")]
-[assembly: AssemblyVersionAttribute("0.9.6")]
-[assembly: AssemblyInformationalVersionAttribute("0.9.6")]
-[assembly: AssemblyFileVersionAttribute("0.9.6")]
+[assembly: AssemblyVersionAttribute("0.20.0")]
+[assembly: AssemblyInformationalVersionAttribute("0.20.0")]
+[assembly: AssemblyFileVersionAttribute("0.20.0")]
 [assembly: AssemblyCompanyAttribute("Anton Mednonogov")]
 namespace System {
     internal static class AssemblyVersionInformation {
-        internal const string Version = "0.9.6";
+        internal const System.String AssemblyProduct = "Journalist";
+        internal const System.String AssemblyVersion = "0.20.0";
+        internal const System.String AssemblyInformationalVersion = "0.20.0";
+        internal const System.String AssemblyFileVersion = "0.20.0";
+        internal const System.String AssemblyCompany = "Anton Mednonogov";
     }
 }
